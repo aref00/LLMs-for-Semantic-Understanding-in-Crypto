@@ -4,6 +4,9 @@ Data and Codes for LLMs Semantic Understanding Benchmarking
 # Authors
 Aref Akbari Kashali, Dr. Mohammad Ali Zare Chahooki
 
+#Keywords
+Large Language Models, Cryptocurrency, Semantic Identification, Retrieval-Augmented Generation, Financial Text Analysis
+
 
 # Raw Data
 Available in ```messages.csv``` file. This file contains extracted messages from telegram.
