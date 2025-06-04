@@ -1,7 +1,7 @@
 # LLMs-for-Semantic-Understanding-in-Crypto
 Data and Codes for LLMs Semantic Understanding Benchmarking
 
-#Authors
+# Authors
 Aref Akbari Kashali, Dr. Mohammad Ali Zare Chahooki
 
 
