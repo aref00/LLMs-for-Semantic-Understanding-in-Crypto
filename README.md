@@ -4,7 +4,7 @@ Data and Codes for LLMs Semantic Understanding Benchmarking
 # Authors
 Aref Akbari Kashali, Dr. Mohammad Ali Zare Chahooki
 
-#Keywords
+# Keywords
 Large Language Models, Cryptocurrency, Semantic Identification, Retrieval-Augmented Generation, Financial Text Analysis
 
 
