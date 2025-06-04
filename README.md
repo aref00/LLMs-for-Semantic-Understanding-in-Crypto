@@ -1,6 +1,9 @@
 # LLMs-for-Semantic-Understanding-in-Crypto
 Data and Codes for LLMs Semantic Understanding Benchmarking
 
+#Authors
+Aref Akbari Kashali, Dr. Mohammad Ali Zare Chahooki
+
 
 # Raw Data
 Available in ```messages.csv``` file. This file contains extracted messages from telegram.
