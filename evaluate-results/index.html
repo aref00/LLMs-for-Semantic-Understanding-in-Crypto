@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Results Review</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .result-item {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .result-item.active {
+            display: block;
+        }
+        
+        .original-text {
+            font-family: "Times New Roman", Times, serif;
+            font-size: 32px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .model-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .model-result {
+            flex: 1;
+            min-width: 200px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            position: relative;
+        }
+        
+        .model-name {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .correct-toggle {
+            cursor: pointer;
+            font-size: 20px;
+            color: #ccc;
+            transition: color 0.3s;
+        }
+        
+        .correct-toggle.correct {
+            background-color: #d2fbe4;
+        }
+        
+        .correct-toggle.incorrect {
+            background-color: #ffdbd6;
+        }
+        
+        .result-field {
+            margin-bottom: 8px;
+        }
+        
+        .field-label {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.9em;
+        }
+        
+        .field-value {
+            margin-left: 5px;
+            color: black;
+        }
+        
+        .status-bar {
+            text-align: center;
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 5px;
+            display: none;
+        }
+        
+        .progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 10px;
+            background-color: #3498db;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .navigation {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .page-info {
+            text-align: center;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .metrics-container {
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .metrics-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .metric-card {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        
+        .metric-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .metric-value {
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>LLM Results Review</h1>
+    
+    <div class="controls">
+        <button id="loadData">Load Data</button>
+        <div>
+            <button id="exportBtn" disabled>Export Corrections</button>
+            <button id="downloadBtn" class="hidden">Download CSV</button>
+            <button id="showMetricsBtn" disabled>Show Metrics</button>
+        </div>
+    </div>
+    
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+    
+    <div class="status-bar" id="statusBar"></div>
+    
+    <div id="metricsContainer" class="metrics-container hidden">
+        <div class="metrics-title">Model Performance Metrics</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+    </div>
+    
+    <div id="resultsContainer"></div>
+    <div class="page-info" id="pageInfo"></div>
+    <div class="navigation">
+        <button id="prevBtn" disabled>Previous</button>
+        <button id="nextBtn" disabled>Next</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+    <script>
+        let db;
+        let models = [
+                "llama3",
+                "deepseek_r1",
+                "deepseek_r1_1_5b",
+                "qwen2_5",
+                "qwen2_5_1_5b",
+                "gemma3_1b",
+                "gemma3"
+            ];
+
+        // Current page state
+        let currentPage = 0;
+        let resultsData = [];
+        let corrections = {};
+        let metrics = {};
+
+        function shortenSymbols(input) {
+            const capitalStr = input.toUpperCase();
+            if (capitalStr == "ERROR") return "ERROR";
+            
+            const excludedPhrases = ["NONE", "NOTHING", "NOT FOUND", "COULD NOT", "THERE ARE NO", "DOES NOT MENTION", "DOES NOT CONTAIN IN STRING"];
+            
+            const containsExcluded = excludedPhrases.some(phrase => capitalStr.includes(phrase));
+            
+            if (containsExcluded) {
+                return "[]";
+            } else if (input.length <= 64) {
+                return capitalStr;
+            } else {
+                return capitalStr.slice(-64);
+            }
+        }
+
+        function shortenSentiment(input) {
+            const capitalStr = input.toUpperCase();
+            if (capitalStr == "ERROR") return "ERROR";
+            
+            return capitalStr.slice(-12);
+        }
+
+        function shortenTimespan(input) {
+            const capitalStr = input.toUpperCase();
+            if (capitalStr == "ERROR") return "ERROR";
+            
+            const ending = capitalStr.slice(-20);
+            
+            if (ending.includes("SHORT")) {
+                return "SHORT TERM";
+            }
+            else if (ending.includes("LONG")) {
+                return "LONG TERM";
+            }
+            else if (ending.includes("MID") || ending.includes("MEDIUM")) {
+                return "MID TERM";
+            }
+            else if (ending.includes("TERM")) {
+                return ending.trim();
+            }
+            else {
+                return "NOT MENTIONED";
+            }
+        }
+        
+        async function loadDatabaseFromFile(file) {
+            const statusBar = document.getElementById('statusBar');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            statusBar.textContent = "Loading SQLite database...";
+            statusBar.style.display = "block";
+            progressContainer.style.display = "block";
+            
+            try {
+                const SQL = await initSqlJs({
+                    locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+                });
+                
+                const fileReader = new FileReader();
+                const fileData = await new Promise((resolve, reject) => {
+                    fileReader.onload = e => resolve(e.target.result);
+                    fileReader.onerror = e => reject(new Error("Failed to read file"));
+                    fileReader.readAsArrayBuffer(file);
+                });
+                
+                db = new SQL.Database(new Uint8Array(fileData));
+                
+                statusBar.textContent = "Database loaded successfully";
+                return true;
+            } catch (err) {
+                statusBar.textContent = `Error loading database: ${err.message}`;
+                console.error(err);
+                return false;
+            } finally {
+                progressContainer.style.display = "none";
+            }
+        }
+        
+        function queryDatabase() {
+            const statusBar = document.getElementById('statusBar');
+            const progressContainer = document.getElementById('progressContainer');
+            
+            statusBar.textContent = "Querying database...";
+            statusBar.style.display = "block";
+            progressContainer.style.display = "block";
+            
+            try {
+                const query = "SELECT * FROM results";
+                const stmt = db.prepare(query);
+                const results = [];
+                
+                while (stmt.step()) {
+                    results.push(stmt.getAsObject());
+                }
+                
+                stmt.free();
+                return results;
+            } catch (err) {
+                statusBar.textContent = `Error querying database: ${err.message}`;
+                console.error(err);
+                return [];
+            } finally {
+                progressContainer.style.display = "none";
+            }
+        }
+
+        function renderResults(data) {
+            resultsContainer.innerHTML = '';
+            models = models.filter((model) => {
+                return data[0] && data[0][`${model}_symbols`];
+            })
+            
+            data.forEach((item, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'result-item';
+                resultItem.dataset.id = item.id;
+                
+                let html = `
+                    <div class="original-text">${item.message}</div>
+                    <div class="model-results">
+                `;
+                models.filter(item => item).forEach((model)  => {
+                    html += `<div class="model-result" data-model="${model}">
+                            <div class="model-name">
+                                ${model}
+                            </div>
+                            <div class="result-field correct-toggle incorrect" data-category="symbols">
+                                <span class="field-label">Symbol:</span>
+                                <span class="field-value">${shortenSymbols(item[`${model}_symbols`])}</span>
+                            </div>
+                            <div class="result-field correct-toggle incorrect" data-category="sentiment">
+                                <span class="field-label">Sentiment:</span>
+                                <span class="field-value">${shortenSentiment(item[`${model}_sentiment`])}</span>
+                            </div>
+                            <div class="result-field correct-toggle incorrect" data-category="timespan">
+                                <span class="field-label">Timespan:</span>
+                                <span class="field-value">${shortenTimespan(item[`${model}_timespan`])}</span>
+                            </div>
+                        </div>` 
+                })
+                html += '</div>'
+                
+                resultItem.innerHTML = html;
+                resultsContainer.appendChild(resultItem);
+            });
+            
+            // Set up event listeners for toggles
+            document.querySelectorAll('.correct-toggle').forEach(toggle => {
+                toggle.addEventListener('click', function() {
+                    const itemId = parseInt(this.closest('.result-item').dataset.id);
+                    const model = this.closest('.model-result').dataset.model;
+                    const category = this.dataset.category;
+                    const currentValue = this.querySelector('.field-value').textContent.trim();
+                    
+                    this.classList.toggle('correct');
+                    this.classList.toggle('incorrect');
+                    
+                    const isCorrect = this.classList.contains('correct');
+                    corrections[itemId][category][`${model}_correct`] = isCorrect;
+                    
+                    if (isCorrect) {
+                        const allResults = document.querySelectorAll('.result-item');
+                        const currentItem = this.closest('.result-item');
+                        
+                        allResults.forEach(item => {
+                            if (item.dataset.id === currentItem.dataset.id) {
+                                const modelResults = item.querySelectorAll('.model-result');
+                                
+                                modelResults.forEach(modelResult => {
+                                    const resultModel = modelResult.dataset.model;
+                                    const field = modelResult.querySelector(`.result-field[data-category="${category}"]`);
+                                    const fieldValue = field.querySelector('.field-value').textContent.trim();
+                                    
+                                    if (fieldValue === currentValue && !field.classList.contains('correct')) {
+                                        field.classList.add('correct');
+                                        field.classList.remove('incorrect');
+                                        corrections[itemId][category][`${resultModel}_correct`] = true;
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    
+                    // Update metrics whenever a correction is made
+                    calculateMetrics();
+                });
+            });
+            
+            // Show first item and update navigation
+            showPage(0);
+            updateNavigation();
+        }
+
+        function calculateMetrics() {
+            // Initialize metrics object
+            metrics = {};
+            
+            models.forEach(model => {
+                metrics[model] = {
+                    symbols: { tp: 0, fp: 0, fn: 0 },
+                    sentiment: { tp: 0, fp: 0, fn: 0 },
+                    timespan: { tp: 0, fp: 0, fn: 0 }
+                };
+            });
+            
+            // Calculate metrics for each model and category
+            for (const [id, correction] of Object.entries(corrections)) {
+                models.forEach(model => {
+                    // Symbols
+                    if (correction.symbols[`${model}_correct`]) {
+                        metrics[model].symbols.tp++;
+                    } else {
+                        metrics[model].symbols.fn++;
+                    }
+                    
+                    // Sentiment
+                    if (correction.sentiment[`${model}_correct`]) {
+                        metrics[model].sentiment.tp++;
+                    } else {
+                        metrics[model].sentiment.fn++;
+                    }
+                    
+                    // Timespan
+                    if (correction.timespan[`${model}_correct`]) {
+                        metrics[model].timespan.tp++;
+                    } else {
+                        metrics[model].timespan.fn++;
+                    }
+                });
+            }
+            
+            // Calculate False Positives (this is simplified - you might need to adjust based on your actual data)
+            // For this example, we'll consider a FP when a model marked something but it was incorrect
+            // You might need to adjust this based on your specific definition of FP
+            models.forEach(model => {
+                metrics[model].symbols.fp = metrics[model].symbols.fn; // Simplified
+                metrics[model].sentiment.fp = metrics[model].sentiment.fn; // Simplified
+                metrics[model].timespan.fp = metrics[model].timespan.fn; // Simplified
+            });
+            
+            // Update the metrics display
+            updateMetricsDisplay();
+        }
+
+        function updateMetricsDisplay() {
+            const metricsGrid = document.getElementById('metricsGrid');
+            metricsGrid.innerHTML = '';
+            
+            models.forEach(model => {
+                const modelMetrics = metrics[model];
+                
+                const metricCard = document.createElement('div');
+                metricCard.className = 'metric-card';
+                
+                let html = `<div class="metric-header">${model}</div>`;
+                
+                // Symbols metrics
+                html += `
+                    <div><strong>Symbols:</strong></div>
+                    <div>True Positives: <span class="metric-value">${modelMetrics.symbols.tp}</span></div>
+                    <div>False Positives: <span class="metric-value">${modelMetrics.symbols.fp}</span></div>
+                    <div>False Negatives: <span class="metric-value">${modelMetrics.symbols.fn}</span></div>
+                    <div>Precision: <span class="metric-value">${modelMetrics.symbols.tp + modelMetrics.symbols.fp > 0 ? 
+                        (modelMetrics.symbols.tp / (modelMetrics.symbols.tp + modelMetrics.symbols.fp)).toFixed(2) : 0}</span></div>
+                    <div>Recall: <span class="metric-value">${modelMetrics.symbols.tp + modelMetrics.symbols.fn > 0 ? 
+                        (modelMetrics.symbols.tp / (modelMetrics.symbols.tp + modelMetrics.symbols.fn)).toFixed(2) : 0}</span></div>
+                    <div>F1 Score: <span class="metric-value">${
+                        (modelMetrics.symbols.tp + modelMetrics.symbols.fp + modelMetrics.symbols.fn) > 0 ? 
+                        (2 * modelMetrics.symbols.tp / (2 * modelMetrics.symbols.tp + modelMetrics.symbols.fp + modelMetrics.symbols.fn)).toFixed(2) : 0
+                    }</span></div>
+                    <br>
+                `;
+                
+                // Sentiment metrics
+                html += `
+                    <div><strong>Sentiment:</strong></div>
+                    <div>True Positives: <span class="metric-value">${modelMetrics.sentiment.tp}</span></div>
+                    <div>False Positives: <span class="metric-value">${modelMetrics.sentiment.fp}</span></div>
+                    <div>False Negatives: <span class="metric-value">${modelMetrics.sentiment.fn}</span></div>
+                    <div>Precision: <span class="metric-value">${modelMetrics.sentiment.tp + modelMetrics.sentiment.fp > 0 ? 
+                        (modelMetrics.sentiment.tp / (modelMetrics.sentiment.tp + modelMetrics.sentiment.fp)).toFixed(2) : 0}</span></div>
+                    <div>Recall: <span class="metric-value">${modelMetrics.sentiment.tp + modelMetrics.sentiment.fn > 0 ? 
+                        (modelMetrics.sentiment.tp / (modelMetrics.sentiment.tp + modelMetrics.sentiment.fn)).toFixed(2) : 0}</span></div>
+                    <div>F1 Score: <span class="metric-value">${
+                        (modelMetrics.sentiment.tp + modelMetrics.sentiment.fp + modelMetrics.sentiment.fn) > 0 ? 
+                        (2 * modelMetrics.sentiment.tp / (2 * modelMetrics.sentiment.tp + modelMetrics.sentiment.fp + modelMetrics.sentiment.fn)).toFixed(2) : 0
+                    }</span></div>
+                    <br>
+                `;
+                
+                // Timespan metrics
+                html += `
+                    <div><strong>Timespan:</strong></div>
+                    <div>True Positives: <span class="metric-value">${modelMetrics.timespan.tp}</span></div>
+                    <div>False Positives: <span class="metric-value">${modelMetrics.timespan.fp}</span></div>
+                    <div>False Negatives: <span class="metric-value">${modelMetrics.timespan.fn}</span></div>
+                    <div>Precision: <span class="metric-value">${modelMetrics.timespan.tp + modelMetrics.timespan.fp > 0 ? 
+                        (modelMetrics.timespan.tp / (modelMetrics.timespan.tp + modelMetrics.timespan.fp)).toFixed(2) : 0}</span></div>
+                    <div>Recall: <span class="metric-value">${modelMetrics.timespan.tp + modelMetrics.timespan.fn > 0 ? 
+                        (modelMetrics.timespan.tp / (modelMetrics.timespan.tp + modelMetrics.timespan.fn)).toFixed(2) : 0}</span></div>
+                    <div>F1 Score: <span class="metric-value">${
+                        (modelMetrics.timespan.tp + modelMetrics.timespan.fp + modelMetrics.timespan.fn) > 0 ? 
+                        (2 * modelMetrics.timespan.tp / (2 * modelMetrics.timespan.tp + modelMetrics.timespan.fp + modelMetrics.timespan.fn)).toFixed(2) : 0
+                    }</span></div>
+                `;
+                
+                metricCard.innerHTML = html;
+                metricsGrid.appendChild(metricCard);
+            });
+        }
+
+        function showPage(pageIndex) {
+            // Hide all items
+            document.querySelectorAll('.result-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show the selected item
+            const items = document.querySelectorAll('.result-item');
+            if (items.length > 0 && pageIndex >= 0 && pageIndex < items.length) {
+                items[pageIndex].classList.add('active');
+                currentPage = pageIndex;
+                updatePageInfo();
+            }
+        }
+
+        function updatePageInfo() {
+            const pageInfo = document.getElementById('pageInfo');
+            const totalItems = document.querySelectorAll('.result-item').length;
+            pageInfo.textContent = `Message ${currentPage + 1} of ${totalItems}`;
+        }
+
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const totalItems = document.querySelectorAll('.result-item').length;
+            
+            prevBtn.disabled = currentPage <= 0;
+            nextBtn.disabled = currentPage >= totalItems - 1;
+        }
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            const loadDataBtn = document.getElementById('loadData');
+            const exportBtn = document.getElementById('exportBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const showMetricsBtn = document.getElementById('showMetricsBtn');
+            const statusBar = document.getElementById('statusBar');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const metricsContainer = document.getElementById('metricsContainer');
+            
+            // Navigation event listeners
+            prevBtn.addEventListener('click', () => {
+                showPage(currentPage - 1);
+                updateNavigation();
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                showPage(currentPage + 1);
+                updateNavigation();
+            });
+
+            // Toggle metrics display
+            showMetricsBtn.addEventListener('click', () => {
+                metricsContainer.classList.toggle('hidden');
+                showMetricsBtn.textContent = metricsContainer.classList.contains('hidden') ? 
+                    'Show Metrics' : 'Hide Metrics';
+            });
+
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.db,.sqlite,.sqlite3';
+            fileInput.style.display = 'none';
+            document.body.appendChild(fileInput);
+            
+            fileInput.addEventListener('change', async function(e) {
+                if (e.target.files.length > 0) {
+                    const loaded = await loadDatabaseFromFile(e.target.files[0]);
+                    if (loaded) {
+                        resultsData = queryDatabase();
+                        if (resultsData.length > 0) {
+                            renderResults(resultsData);
+                            statusBar.textContent = `Loaded ${resultsData.length} records`;
+                            exportBtn.disabled = false;
+                            showMetricsBtn.disabled = false;
+                            
+                            // Initialize corrections object
+                            corrections = {};
+                            resultsData.forEach(item => {
+                                corrections[item.id] = {
+                                    symbols: {},
+                                    sentiment: {},
+                                    timespan: {}
+                                };
+                                models.forEach(model => {
+                                    corrections[item.id].symbols[`${model}_correct`] = false;
+                                    corrections[item.id].sentiment[`${model}_correct`] = false;
+                                    corrections[item.id].timespan[`${model}_correct`] = false;
+                                });
+                            });
+                            
+                            // Initialize metrics
+                            calculateMetrics();
+                            
+                            // Enable navigation buttons
+                            prevBtn.disabled = false;
+                            nextBtn.disabled = false;
+                        }
+                    }
+                }
+            });
+            
+            loadDataBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            exportBtn.addEventListener('click', function() {
+                statusBar.textContent = "Preparing corrections for export...";
+                statusBar.style.display = "block";
+                progressContainer.style.display = "block";
+                progressBar.style.width = "0%";
+                
+                setTimeout(() => {
+                    let csvContent = "id";
+                    
+                    models.forEach(model => {
+                        csvContent += `,${model}_symbols_correct,${model}_sentiment_correct,${model}_timespan_correct`;
+                    });
+                    csvContent += '\n';
+
+                    for (const [id, correction] of Object.entries(corrections)) {
+                        csvContent += `${id}`;
+                        models.forEach(model => {
+                            csvContent += `,${correction.symbols[`${model}_correct`] ? '1' : '0'}`;
+                            csvContent += `,${correction.sentiment[`${model}_correct`] ? '1' : '0'}`;
+                            csvContent += `,${correction.timespan[`${model}_correct`] ? '1' : '0'}`;
+                        });
+                        csvContent += '\n';
+                    }
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    downloadBtn.onclick = function() {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'llm_corrections.csv';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    };
+                    
+                    progressBar.style.width = "100%";
+                    statusBar.textContent = "Corrections ready for download";
+                    downloadBtn.classList.remove('hidden');
+                    
+                    setTimeout(() => {
+                        progressContainer.style.display = "none";
+                    }, 1000);
+                }, 500);
+            });
+        });
+    </script>
+</body>
+</html>
